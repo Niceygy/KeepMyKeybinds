@@ -5,6 +5,7 @@ import os
 import shutil
 import datetime
 from fontTools.ttLib import TTFont
+import requests
 
 
 # Variables
@@ -83,10 +84,10 @@ try:
     if not os.path.exists(BACKUP_FOLDER):
         print("Creating TEMP_FOLDER_LOCATION")
         os.mkdir(BACKUP_FOLDER)
-    custom_font_family = register_custom_font(window, "EuroCaps.ttf")
+    custom_font_family = register_custom_font(window, "EUROCAPS.TTF")
     print("Directories created successfully")
 except Exception as e:
-    print("Error creating directories:", e)
+    print("Error on startup:", e)
 
 """
 Backup/Restore
