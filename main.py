@@ -4,21 +4,18 @@ import subprocess
 import os
 import shutil
 import datetime
-from fontTools.ttLib import TTFont
 import requests
-
+from fontTools.ttLib import TTFont
+from service import KeybindBackupService
+import sys
 
 # Variables
 CONFIG_LOCATION = "C:\\Users\\" + os.getlogin() + "\\AppData\\Local\\Frontier Developments\\Elite Dangerous\\Options\\"
-
 KEYBIND_FOLDER = CONFIG_LOCATION + "Bindings\\"
-
 SERVICE_ENABLED = False
-
 DATA_FOLDER = "C:\\Users\\" + os.getlogin() + "\\.KeepMyKeybinds\\"
 BACKUP_FOLDER = DATA_FOLDER + "backups\\"
 window = tk.Tk()
-
 
 """
 Config
@@ -47,7 +44,6 @@ get_config()
 """
 Cosmetic
 """
-
 
 # Function to list font families within a font file
 def list_font_families(font_path):
@@ -78,6 +74,10 @@ Startup
 
 # Init startup logic
 try:
+    if not os.path.exists("EUROCAPS.TTF"):
+        response = requests.get("https://cdn.niceygy.net/EUROCAPS.TTF")
+        with open("EUROCAPS.TTF", "wb") as f:
+            f.write(response.content)
     if not os.path.exists(DATA_FOLDER):
         print("Creating APPDATA_LOCATION")
         os.mkdir(DATA_FOLDER)
@@ -121,6 +121,40 @@ def OpenBackupLocation():
     print(f"Opening backup location: " + DATA_FOLDER)
     subprocess.Popen(rf'explorer /select,"{BACKUP_FOLDER}"')
 
+
+"""
+Service-ing!
+"""
+
+ToggleServiceBtn = None
+
+# Modify the InstallService function to use the correct method
+def InstallService():
+    subprocess.run(["sc", "create", "KeepMyKeybinds", "binPath=", f'"{sys.executable} {os.path.abspath("service.py")}"'])
+    messagebox.showinfo("KeepMyKeybinds", "Service installed successfully")
+
+# Modify the StartService function to use the correct method
+def StartService():
+    subprocess.run(["sc", "start", "KeepMyKeybinds"])
+    messagebox.showinfo("KeepMyKeybinds", "Service started successfully")
+
+# Modify the StopService function to use the correct method
+def StopService():
+    subprocess.run(["sc", "stop", "KeepMyKeybinds"])
+    messagebox.showinfo("KeepMyKeybinds", "Service stopped successfully")
+
+# Modify the UninstallService function to use the correct method
+def UninstallService():
+    subprocess.run(["sc", "delete", "KeepMyKeybinds"])
+    messagebox.showinfo("KeepMyKeybinds", "Service uninstalled successfully")
+
+def ToggleService():
+    if KeybindBackupService.is_running == True:
+        StopService()
+    else:
+        StartService()
+    ToggleServicebtn = tk.Button(text=f"{"stop" if KeybindBackupService.is_running else "start"} service").pack(fill='x')
+
 """
 GUI
 """
@@ -140,9 +174,14 @@ RestoreBtn = tk.Button(text="Manual Restore", fg="#f07b05", bg="black", command=
 
 OpenBackupBtn = tk.Button(text="Open backup Location", fg="#f07b05", bg="black", command=OpenBackupLocation).pack(fill="x")
 
-ServiceBtn = tk.Button(text="Background Backup & Restore", fg="#f07b05", bg="black").pack(fill="x")
+tk.Label(text="Background Backup & Restore", fg="#f07b05", bg="black").pack(fill="x")
 tk.Label(text="This will run a background task on\n your device, that checks for \nchanges to the keybinds file.\nWhen it detects a change, it\n will make a backup copy", fg="#f07b05", bg="black", anchor="center").pack(fill="x")
-tk.Label(text=f"(The service is {"enabled" if SERVICE_ENABLED else "disabled"})", fg="#f07b05", bg="black").pack(fill="x")
+tk.Label(text=f"(The service is {"enabled" if KeybindBackupService.is_running else "disabled"})", fg="#f07b05", bg="black").pack(fill="x")
+
+# Service Control Buttons
+InstallServiceBtn = tk.Button(text="Install Service", fg="#f07b05", bg="black", command=InstallService).pack(fill='x')
+ToggleServicebtn = tk.Button(text=f"{"stop" if KeybindBackupService.is_running else "start"} service").pack(fill='x')
+UninstallServiceBtn = tk.Button(text="Uninstall Service", fg="#f07b05", bg="black", command=UninstallService).pack(fill='x')
 
 """
 Go!
