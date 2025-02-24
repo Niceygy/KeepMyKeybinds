@@ -4,22 +4,27 @@ import subprocess
 import os
 import shutil
 import datetime
-import requests
 from fontTools.ttLib import TTFont
-from service import KeybindBackupService
-import sys
+import webbrowser
 
 # Variables
-CONFIG_LOCATION = "C:\\Users\\" + os.getlogin() + "\\AppData\\Local\\Frontier Developments\\Elite Dangerous\\Options\\"
+CONFIG_LOCATION = (
+    "C:\\Users\\"
+    + os.getlogin()
+    + "\\AppData\\Local\\Frontier Developments\\Elite Dangerous\\Options\\"
+)
 KEYBIND_FOLDER = CONFIG_LOCATION + "Bindings\\"
-SERVICE_ENABLED = False
+TRAY_ENABLED = False
 DATA_FOLDER = "C:\\Users\\" + os.getlogin() + "\\.KeepMyKeybinds\\"
 BACKUP_FOLDER = DATA_FOLDER + "backups\\"
+STARTUP_FOLDER = f"C:\\Users\\{os.getlogin()}\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup"
 window = tk.Tk()
+ToggleTrayBtn = None
 
 """
 Config
 """
+
 
 def get_config():
     try:
@@ -39,47 +44,124 @@ def get_config():
     except Exception as e:
         print(e)
 
-get_config()
+
+"""
+Tray
+"""
+
+
+def enable_tray():
+    if os.path.exists(os.getcwd(), "KeepMyKeybindsTray.exe"):
+        shutil.copyfile("KeepMyKeybindsTray.exe", STARTUP_FOLDER)
+        messagebox.showinfo(
+            "KeepMyKeybinds!",
+            "Tray enabled on startup! It will now check for backups when your device starts up.",
+        )
+        ToggleTrayBtn = tk.Button(
+            text=f"{"Disable" if TRAY_ENABLED else "Enable"} backup checher",
+            fg="#f07b05",
+            bg="black",
+        ).pack(fill="x")
+    else:
+        choice = messagebox.askokcancel(
+            "KeepMyKeybinds!", "Cannot find tray exe! OK to open the download page?"
+        )
+        ToggleTrayBtn = tk.Button(
+            text=f"{"Disable" if TRAY_ENABLED else "Enable"} backup checher",
+            fg="#f07b05",
+            bg="black",
+        ).pack(fill="x")
+        if choice:
+            webbrowser.open_new_tab("https://niceygy.net/projects/keepmykeybinds")
+
+
+def disable_tray():
+    if is_tray_enabled():
+        shutil.rmtree(os.path.join(STARTUP_FOLDER, "KeepMyKeybindsTray.exe"))
+        messagebox.showinfo(
+            "KepMyKeybinds!",
+            "Tray exe is now disabled. Please restart your device for this to take effect.",
+        )
+        ToggleTrayBtn = tk.Button(
+            text=f"{"Disable" if TRAY_ENABLED else "Enable"} backup checher",
+            fg="#f07b05",
+            bg="black",
+        ).pack(fill="x")
+    else:
+        messagebox.showerror("KeepMyKeybinds!", "Tray exe already disabled.")
+        ToggleTrayBtn = tk.Button(
+            text=f"{"Disable" if TRAY_ENABLED else "Enable"} backup checher",
+            fg="#f07b05",
+            bg="black",
+        ).pack(fill="x")
+
+
+def toggle_tray():
+    if is_tray_enabled():
+        disable_tray()
+    else:
+        enable_tray()
+
+
+def is_tray_enabled():
+    if os.path.exists(os.path.join(STARTUP_FOLDER, "KeepMyKeybindsTray.exe")):
+        TRAY_ENABLED = True
+        print("Tray enabled")
+        return True
+    else:
+        TRAY_ENABLED = False
+        print("Tray disabled")
+        return False
+
+
+# get_config()
 
 """
 Cosmetic
 """
 
+
 # Function to list font families within a font file
 def list_font_families(font_path):
     font = TTFont(font_path)
-    families = [name.toUnicode() for name in font['name'].names if name.nameID == 1]
+    families = [name.toUnicode() for name in font["name"].names if name.nameID == 1]
     return families
+
 
 # Function to register a custom font
 def register_custom_font(root, font_path):
     font_families = list_font_families(font_path)
-    
+
     if font_families:
         # Register the first font family
         custom_font_family = font_families[0]
-        root.tk.call('font', 'create', custom_font_family, '-family', custom_font_family, '-size', 12)
-        
+        root.tk.call(
+            "font",
+            "create",
+            custom_font_family,
+            "-family",
+            custom_font_family,
+            "-size",
+            12,
+        )
+
         # Set the registered font as default for the application
         default_font = font.Font(family=custom_font_family, size=12)
         root.option_add("*Font", default_font)
-        
+
         return custom_font_family
     else:
         raise ValueError("No font families found in the font file.")
-    
+
+
 """
 Startup
 """
 
 # Init startup logic
 try:
-    if not os.path.exists("EUROCAPS.TTF"):
-        response = requests.get("https://cdn.niceygy.net/EUROCAPS.TTF")
-        with open("EUROCAPS.TTF", "wb") as f:
-            f.write(response.content)
     if not os.path.exists(DATA_FOLDER):
-        print("Creating APPDATA_LOCATION")
+        print("Creating Data Folder")
         os.mkdir(DATA_FOLDER)
     if not os.path.exists(BACKUP_FOLDER):
         print("Creating TEMP_FOLDER_LOCATION")
@@ -93,29 +175,43 @@ except Exception as e:
 Backup/Restore
 """
 
+
 def Backup():
     try:
         date = datetime.datetime.now().date()
         time = datetime.datetime.now().time()
         folder_name = f"{date}_{time.hour}_{time.minute}"
-        shutil.copytree(KEYBIND_FOLDER, os.path.join(BACKUP_FOLDER, "Bindings", folder_name))
-        messagebox.showinfo("KeepMyKeybinds", f"Backup saved to folder under '{folder_name}'")
+        shutil.copytree(
+            KEYBIND_FOLDER, os.path.join(BACKUP_FOLDER, "Bindings", folder_name)
+        )
+        messagebox.showinfo(
+            "KeepMyKeybinds", f"Backup saved to folder under '{folder_name}'"
+        )
     except Exception as e:
         print("Error copying folders:", e)
         messagebox.showinfo("KeepMyKeybinds", e)
+
 
 def Restore():
     print("Restoring")
     listdir = os.listdir(os.path.join(BACKUP_FOLDER, "Bindings"))
     listdir.sort()
-    latest_backup = listdir[len(listdir)-1]
-    choice = messagebox.askokcancel("KeepMyKeybinds!", f"Restore backup from {latest_backup}?")
+    latest_backup = listdir[len(listdir) - 1]
+    choice = messagebox.askokcancel(
+        "KeepMyKeybinds!", f"Restore backup from {latest_backup}?"
+    )
     if choice:
         shutil.rmtree(KEYBIND_FOLDER)
-        shutil.copytree(os.path.join(BACKUP_FOLDER, "Bindings", latest_backup), KEYBIND_FOLDER)
-        messagebox.showinfo("KeepMyKeybinds!", "Sucessfully restored keybinds. Original backup has been kept")
+        shutil.copytree(
+            os.path.join(BACKUP_FOLDER, "Bindings", latest_backup), KEYBIND_FOLDER
+        )
+        messagebox.showinfo(
+            "KeepMyKeybinds!",
+            "Sucessfully restored keybinds. Original backup has been kept",
+        )
     else:
         return
+
 
 def OpenBackupLocation():
     print(f"Opening backup location: " + DATA_FOLDER)
@@ -123,65 +219,60 @@ def OpenBackupLocation():
 
 
 """
-Service-ing!
-"""
-
-ToggleServiceBtn = None
-
-# Modify the InstallService function to use the correct method
-def InstallService():
-    subprocess.run(["sc", "create", "KeepMyKeybinds", "binPath=", f'"{sys.executable} {os.path.abspath("service.py")}"'])
-    messagebox.showinfo("KeepMyKeybinds", "Service installed successfully")
-
-# Modify the StartService function to use the correct method
-def StartService():
-    subprocess.run(["sc", "start", "KeepMyKeybinds"])
-    messagebox.showinfo("KeepMyKeybinds", "Service started successfully")
-
-# Modify the StopService function to use the correct method
-def StopService():
-    subprocess.run(["sc", "stop", "KeepMyKeybinds"])
-    messagebox.showinfo("KeepMyKeybinds", "Service stopped successfully")
-
-# Modify the UninstallService function to use the correct method
-def UninstallService():
-    subprocess.run(["sc", "delete", "KeepMyKeybinds"])
-    messagebox.showinfo("KeepMyKeybinds", "Service uninstalled successfully")
-
-def ToggleService():
-    if KeybindBackupService.is_running == True:
-        StopService()
-    else:
-        StartService()
-    ToggleServicebtn = tk.Button(text=f"{"stop" if KeybindBackupService.is_running else "start"} service").pack(fill='x')
-
-"""
 GUI
 """
 window.title("Keep My Keybinds!")
 window.geometry("300x380")
 window.iconbitmap("icon.ico")
-window.configure(bg='black')
+window.configure(bg="black")
 
-title = tk.Label(text="Keep My Keybinds!", anchor="center", fg="#f07b05", bg="black", font=("Euro Caps", 20) ).pack(fill='x')
+title = tk.Label(
+    text="Keep My Keybinds!",
+    anchor="center",
+    fg="#f07b05",
+    bg="black",
+    font=("Euro Caps", 20),
+).pack(fill="x")
 
-tk.Label(text="A simple utility for managing keybinds \nfor elite. With 🩷 & 💥, by niceygy.", fg="#f07b05", bg="black").pack(fill='x')
+tk.Label(
+    text="A simple utility for managing keybinds \nfor elite. With 🩷 & 💥, by niceygy.",
+    fg="#f07b05",
+    bg="black",
+).pack(fill="x")
 
 # BACKUP! & RESTORE! Button
-BackupBtn = tk.Button(text="Manual Backup", fg="#f07b05", bg="black", command=Backup).pack(fill='x')
+BackupBtn = tk.Button(
+    text="Manual Backup", fg="#f07b05", bg="black", command=Backup
+).pack(fill="x")
 
-RestoreBtn = tk.Button(text="Manual Restore", fg="#f07b05", bg="black", command=Restore).pack(fill='x')
+RestoreBtn = tk.Button(
+    text="Manual Restore", fg="#f07b05", bg="black", command=Restore
+).pack(fill="x")
 
-OpenBackupBtn = tk.Button(text="Open backup Location", fg="#f07b05", bg="black", command=OpenBackupLocation).pack(fill="x")
+# Tray Buttons
 
-tk.Label(text="Background Backup & Restore", fg="#f07b05", bg="black").pack(fill="x")
-tk.Label(text="This will run a background task on\n your device, that checks for \nchanges to the keybinds file.\nWhen it detects a change, it\n will make a backup copy", fg="#f07b05", bg="black", anchor="center").pack(fill="x")
-tk.Label(text=f"(The service is {"enabled" if KeybindBackupService.is_running else "disabled"})", fg="#f07b05", bg="black").pack(fill="x")
+ToggleTrayBtn = tk.Button(
+    text=f"{"Disable" if TRAY_ENABLED else "Enable"} backup checher",
+    fg="#f07b05",
+    bg="black",
+).pack(fill="x")
+tk.Label(
+    text="This will check for any changes when \nyour PC starts. May require admin \npermissions to enable.",
+    fg="#f07b05",
+    bg="black",
+    anchor="center",
+).pack(fill="x")
 
-# Service Control Buttons
-InstallServiceBtn = tk.Button(text="Install Service", fg="#f07b05", bg="black", command=InstallService).pack(fill='x')
-ToggleServicebtn = tk.Button(text=f"{"stop" if KeybindBackupService.is_running else "start"} service").pack(fill='x')
-UninstallServiceBtn = tk.Button(text="Uninstall Service", fg="#f07b05", bg="black", command=UninstallService).pack(fill='x')
+# Open Backup Folder
+OpenBackupBtn = tk.Button(
+    text="Open backup Location", fg="#f07b05", bg="black", command=OpenBackupLocation
+).pack(fill="x")
+tk.Label(
+    text="Opens the backup folder \nin file explorer",
+    fg="#f07b05",
+    bg="black",
+    anchor="center",
+).pack(fill="x")
 
 """
 Go!
