@@ -18,12 +18,21 @@ TRAY_ENABLED = False
 DATA_FOLDER = "C:\\Users\\" + os.getlogin() + "\\.KeepMyKeybinds\\"
 BACKUP_FOLDER = DATA_FOLDER + "backups\\"
 STARTUP_FOLDER = f"C:\\Users\\{os.getlogin()}\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup"
+
+
+
+#GUI Init
+
 window = tk.Tk()
 ToggleTrayBtn = None
+window.title("Keep My Keybinds!")
+window.geometry("340x380")
+window.iconbitmap("icon.ico")
+window.configure(bg="black")
 
-"""
-Config
-"""
+
+
+#Config
 
 
 def get_config():
@@ -51,67 +60,57 @@ Tray
 
 
 def enable_tray():
-    if os.path.exists(os.getcwd(), "KeepMyKeybindsTray.exe"):
-        shutil.copyfile("KeepMyKeybindsTray.exe", STARTUP_FOLDER)
-        messagebox.showinfo(
-            "KeepMyKeybinds!",
-            "Tray enabled on startup! It will now check for backups when your device starts up.",
-        )
-        ToggleTrayBtn = tk.Button(
-            text=f"{"Disable" if TRAY_ENABLED else "Enable"} backup checher",
-            fg="#f07b05",
-            bg="black",
-        ).pack(fill="x")
+    if os.path.exists(os.path.join(os.getcwd(), "KeepMyKeybindsTray.exe")):
+        choice = messagebox.askokcancel("KeepMyKeybinds", "To install the checker, the app will ask for admin permissions this one time. OK to continue?")
+        if not choice:
+            return
+        subprocess.run("keepmykeybindstray.exe install")
     else:
+        print("noo")
         choice = messagebox.askokcancel(
             "KeepMyKeybinds!", "Cannot find tray exe! OK to open the download page?"
         )
-        ToggleTrayBtn = tk.Button(
-            text=f"{"Disable" if TRAY_ENABLED else "Enable"} backup checher",
-            fg="#f07b05",
-            bg="black",
-        ).pack(fill="x")
         if choice:
             webbrowser.open_new_tab("https://niceygy.net/projects/keepmykeybinds")
 
 
-def disable_tray():
-    if is_tray_enabled():
-        shutil.rmtree(os.path.join(STARTUP_FOLDER, "KeepMyKeybindsTray.exe"))
-        messagebox.showinfo(
-            "KepMyKeybinds!",
-            "Tray exe is now disabled. Please restart your device for this to take effect.",
-        )
-        ToggleTrayBtn = tk.Button(
-            text=f"{"Disable" if TRAY_ENABLED else "Enable"} backup checher",
-            fg="#f07b05",
-            bg="black",
-        ).pack(fill="x")
-    else:
-        messagebox.showerror("KeepMyKeybinds!", "Tray exe already disabled.")
-        ToggleTrayBtn = tk.Button(
-            text=f"{"Disable" if TRAY_ENABLED else "Enable"} backup checher",
-            fg="#f07b05",
-            bg="black",
-        ).pack(fill="x")
+# def disable_tray():
+#     if is_tray_enabled():
+#         shutil.rmtree(os.path.join(STARTUP_FOLDER, "KeepMyKeybindsTray.exe"))
+#         messagebox.showinfo(
+#             "KepMyKeybinds!",
+#             "Tray exe is now disabled. Please restart your device for this to take effect.",
+#         )
+#         ToggleTrayBtn = tk.Button(
+#             text=f"{"Disable" if TRAY_ENABLED else "Enable"} backup checher",
+#             fg="#f07b05",
+#             bg="black",
+#         ).pack(fill="x")
+#     else:
+#         messagebox.showerror("KeepMyKeybinds!", "Tray exe already disabled.")
+#         ToggleTrayBtn = tk.Button(
+#             text=f"{"Disable" if TRAY_ENABLED else "Enable"} backup checher",
+#             fg="#f07b05",
+#             bg="black",
+#         ).pack(fill="x")
 
 
-def toggle_tray():
-    if is_tray_enabled():
-        disable_tray()
-    else:
-        enable_tray()
+# def toggle_tray():
+#     if is_tray_enabled():
+#         disable_tray()
+#     else:
+#         enable_tray()
 
 
-def is_tray_enabled():
-    if os.path.exists(os.path.join(STARTUP_FOLDER, "KeepMyKeybindsTray.exe")):
-        TRAY_ENABLED = True
-        print("Tray enabled")
-        return True
-    else:
-        TRAY_ENABLED = False
-        print("Tray disabled")
-        return False
+# def is_tray_enabled():
+#     if os.path.exists(os.path.join(STARTUP_FOLDER, "KeepMyKeybindsTray.exe")):
+#         TRAY_ENABLED = True
+#         print("Tray enabled")
+#         return True
+#     else:
+#         TRAY_ENABLED = False
+#         print("Tray disabled")
+#         return False
 
 
 # get_config()
@@ -171,9 +170,8 @@ try:
 except Exception as e:
     print("Error on startup:", e)
 
-"""
-Backup/Restore
-"""
+
+#Backup/Restore
 
 
 def Backup():
@@ -217,14 +215,13 @@ def OpenBackupLocation():
     print(f"Opening backup location: " + DATA_FOLDER)
     subprocess.Popen(rf'explorer /select,"{BACKUP_FOLDER}"')
 
+def OpenHelpPage():
+    webbrowser.open_new_tab("https://niceygy.net/keepmykeybinds")
 
 """
-GUI
+GUI Conf
 """
-window.title("Keep My Keybinds!")
-window.geometry("300x380")
-window.iconbitmap("icon.ico")
-window.configure(bg="black")
+
 
 title = tk.Label(
     text="Keep My Keybinds!",
@@ -238,41 +235,74 @@ tk.Label(
     text="A simple utility for managing keybinds \nfor elite. With 🩷 & 💥, by niceygy.",
     fg="#f07b05",
     bg="black",
+    font=("Euro Caps", 13),
 ).pack(fill="x")
 
 # BACKUP! & RESTORE! Button
 BackupBtn = tk.Button(
-    text="Manual Backup", fg="#f07b05", bg="black", command=Backup
+    text="Manual Backup",
+    fg="#f07b05",
+    bg="black",
+    command=Backup,
+    font=("Euro Caps", 13),
 ).pack(fill="x")
 
 RestoreBtn = tk.Button(
-    text="Manual Restore", fg="#f07b05", bg="black", command=Restore
-).pack(fill="x")
-
-# Tray Buttons
-
-ToggleTrayBtn = tk.Button(
-    text=f"{"Disable" if TRAY_ENABLED else "Enable"} backup checher",
+    text="Manual Restore",
     fg="#f07b05",
     bg="black",
+    command=Restore,
+    font=("Euro Caps", 13),
 ).pack(fill="x")
-tk.Label(
-    text="This will check for any changes when \nyour PC starts. May require admin \npermissions to enable.",
-    fg="#f07b05",
-    bg="black",
-    anchor="center",
-).pack(fill="x")
+
+# # Tray Buttons
+
+# ToggleTrayBtn = tk.Button(
+#     text=f"{"Disable" if TRAY_ENABLED else "Enable"} backup checher",
+#     fg="#f07b05",
+#     bg="black",
+#     font=("Euro Caps", 13),
+#     command=toggle_tray
+# ).pack(fill="x")
+# tk.Label(
+#     text="This will check for any changes when \nyour PC starts. May require admin \npermissions to enable.",
+#     fg="#f07b05",
+#     bg="black",
+#     anchor="center",
+#     font=("Euro Caps", 13),
+# ).pack(fill="x")
 
 # Open Backup Folder
 OpenBackupBtn = tk.Button(
-    text="Open backup Location", fg="#f07b05", bg="black", command=OpenBackupLocation
+    text="Open backup Location",
+    fg="#f07b05",
+    bg="black",
+    command=OpenBackupLocation,
+    font=("Euro Caps", 13),
 ).pack(fill="x")
 tk.Label(
     text="Opens the backup folder \nin file explorer",
     fg="#f07b05",
     bg="black",
     anchor="center",
+    font=("Euro Caps", 13),
 ).pack(fill="x")
+
+OpenHelpBtn = tk.Button(
+    text="Help Me!",
+    fg="#f07b05",
+    bg="black",
+    command=OpenHelpPage,
+    font=("Euro Caps", 13),
+).pack(fill="x")
+tk.Label(
+    text="Opens the help page \nin a browser",
+    fg="#f07b05",
+    bg="black",
+    anchor="center",
+    font=("Euro Caps", 13),
+).pack(fill="x")
+
 
 """
 Go!

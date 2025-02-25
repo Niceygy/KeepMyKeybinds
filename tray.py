@@ -1,13 +1,16 @@
 import datetime
 import os
 import shutil
-# import wx
+import sys
 import wx.adv
-
+from tkinter import messagebox
+from elevate import elevate
 
 TASKTRAY_NAME = "KeepMyKeybinds!"
 TASKTRAY_MESSAGE = "Backup in progress..."
 TASKTRAY_ICON = 'icon.png'
+STARTUP_FOLDER = f"C:\\Users\\{os.getlogin()}\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup"
+
 
 
 def create_menu_item(menu, label, func):
@@ -47,6 +50,7 @@ class TaskBarIcon(wx.adv.TaskBarIcon):
 
 
 def main():
+    print("main")
     app = wx.App()
     TaskBarIcon()
     app.MainLoop()
@@ -66,5 +70,19 @@ def main():
     while True:
         time.sleep(100)
 
-if __name__ == '__main__':
+def install():
+    print("installing...")
+    elevate(True)
+    shutil.copyfile("KeepMyKeybindsTray.exe", STARTUP_FOLDER)
+    messagebox.showinfo(
+            "KeepMyKeybinds!",
+            "Tray enabled on startup! It will now check for backups when your device starts up.",
+    )
+    while True:
+        print()
+
+if len(sys.argv) > 0:
+    if sys.argv[1] == "install":
+        install()
+else:
     main()
