@@ -1,0 +1,12 @@
+#################################
+        KEEP MY KEYBINDS!
+#################################
+
+This is a simple utility built in python,
+for backing up your Elite Dangerous keybinds.
+
+It will copy them to C:/Users/<your username>/.KeepMyKeybinds/Backup
+
+Each backup is date marked.
+
+

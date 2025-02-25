@@ -54,24 +54,22 @@ def get_config():
         print(e)
 
 
-"""
-Tray
-"""
 
+#Tray
 
-def enable_tray():
-    if os.path.exists(os.path.join(os.getcwd(), "KeepMyKeybindsTray.exe")):
-        choice = messagebox.askokcancel("KeepMyKeybinds", "To install the checker, the app will ask for admin permissions this one time. OK to continue?")
-        if not choice:
-            return
-        subprocess.run("keepmykeybindstray.exe install")
-    else:
-        print("noo")
-        choice = messagebox.askokcancel(
-            "KeepMyKeybinds!", "Cannot find tray exe! OK to open the download page?"
-        )
-        if choice:
-            webbrowser.open_new_tab("https://niceygy.net/projects/keepmykeybinds")
+# def enable_tray():
+#     if os.path.exists(os.path.join(os.getcwd(), "KeepMyKeybindsTray.exe")):
+#         choice = messagebox.askokcancel("KeepMyKeybinds", "To install the checker, the app will ask for admin permissions this one time. OK to continue?")
+#         if not choice:
+#             return
+#         subprocess.run("keepmykeybindstray.exe install")
+#     else:
+#         print("noo")
+#         choice = messagebox.askokcancel(
+#             "KeepMyKeybinds!", "Cannot find tray exe! OK to open the download page?"
+#         )
+#         if choice:
+#             webbrowser.open_new_tab("https://niceygy.net/projects/keepmykeybinds")
 
 
 # def disable_tray():
@@ -153,9 +151,9 @@ def register_custom_font(root, font_path):
         raise ValueError("No font families found in the font file.")
 
 
-"""
-Startup
-"""
+
+#Startup
+
 
 # Init startup logic
 try:
@@ -218,9 +216,9 @@ def OpenBackupLocation():
 def OpenHelpPage():
     webbrowser.open_new_tab("https://niceygy.net/keepmykeybinds")
 
-"""
-GUI Conf
-"""
+
+#GUI Conf
+
 
 
 title = tk.Label(
@@ -304,8 +302,8 @@ tk.Label(
 ).pack(fill="x")
 
 
-"""
-Go!
-"""
+
+#Go!
+
 
 window.mainloop()
