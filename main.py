@@ -8,18 +8,16 @@ from fontTools.ttLib import TTFont
 import webbrowser
 
 # Variables
-CONFIG_LOCATION = (
+ED_KEYBINDS_FOLDER = (
     "C:\\Users\\"
     + os.getlogin()
-    + "\\AppData\\Local\\Frontier Developments\\Elite Dangerous\\Options\\"
+    + "\\AppData\\Local\\Frontier Developments\\Elite Dangerous\\Options\\Bindings\\"
 )
-KEYBIND_FOLDER = CONFIG_LOCATION + "Bindings\\"
-TRAY_ENABLED = False
-DATA_FOLDER = "C:\\Users\\" + os.getlogin() + "\\.KeepMyKeybinds\\"
+DATA_FOLDER = f"C:\\Users\\{os.getlogin()}\\.KeepMyKeybinds\\"
 BACKUP_FOLDER = DATA_FOLDER + "backups\\"
-STARTUP_FOLDER = f"C:\\Users\\{os.getlogin()}\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup"
-
-
+DEBUG_ENABLED = False
+DEBUG_FOLDER = DATA_FOLDER + "debug\\"
+DEVENV = False
 
 #GUI Init
 
@@ -31,91 +29,56 @@ window.iconbitmap("icon.ico")
 window.configure(bg="black")
 
 
+def log(message: str, func: str):
+    try:
+        if DEVENV:
+            print(f"{func}: {message}")
+        elif DEBUG_ENABLED:
+            with open(f"{DEBUG_FOLDER}/debug.txt", "a") as f:
+                f.write(f"{func}: {message}\n")
+                f.close()
+    except FileNotFoundError:
+        os.mkdir(DEBUG_FOLDER)
+        open(f"{DEBUG_FOLDER}/debug.txt", "w").write("\n")
+
 
 #Config
 
 
 def get_config():
+    global DEBUG_ENABLED  # Add this line
     try:
         with open(f"{DATA_FOLDER}/config.txt", "r") as f:
             data = f.read()
             data = data.splitlines()
             for i in range(len(data)):
                 line = data[i]
+                print(line)
+                if line.startswith("#"):
+                    continue
                 key = line.split("=")[0]
+                print(key == "DebugEnabled")
                 data = line.split("=")[1]
                 match key:
-                    case "ServiceEnabled":
-                        break
+                    case "KeybindPath":
+                        ED_KEYBINDS_FOLDER = data
+                        log(f"KeybindPath: {data}", "get_config")
+                    case "DebugEnabled":
+                        if data == "True":
+                            DEBUG_ENABLED = True
+                        else:
+                            DEBUG_ENABLED = False
+                        log(f"DebugEnabled: {data}", "get_config")
+
         f.close()
     except FileNotFoundError as e:
-        open(f"{DATA_FOLDER}/config.txt", "w").write("ServiceEnabled=False")
+        open(f"{DATA_FOLDER}/config.txt", "w").write(f"KeybindPath={ED_KEYBINDS_FOLDER}\nDebugEnabled=False")
+        log("Config folder made", "get_config")
     except Exception as e:
-        print(e)
+        log(e, "get_config")
 
+#Cosmetic
 
-
-#Tray
-
-# def enable_tray():
-#     if os.path.exists(os.path.join(os.getcwd(), "KeepMyKeybindsTray.exe")):
-#         choice = messagebox.askokcancel("KeepMyKeybinds", "To install the checker, the app will ask for admin permissions this one time. OK to continue?")
-#         if not choice:
-#             return
-#         subprocess.run("keepmykeybindstray.exe install")
-#     else:
-#         print("noo")
-#         choice = messagebox.askokcancel(
-#             "KeepMyKeybinds!", "Cannot find tray exe! OK to open the download page?"
-#         )
-#         if choice:
-#             webbrowser.open_new_tab("https://niceygy.net/projects/keepmykeybinds")
-
-
-# def disable_tray():
-#     if is_tray_enabled():
-#         shutil.rmtree(os.path.join(STARTUP_FOLDER, "KeepMyKeybindsTray.exe"))
-#         messagebox.showinfo(
-#             "KepMyKeybinds!",
-#             "Tray exe is now disabled. Please restart your device for this to take effect.",
-#         )
-#         ToggleTrayBtn = tk.Button(
-#             text=f"{"Disable" if TRAY_ENABLED else "Enable"} backup checher",
-#             fg="#f07b05",
-#             bg="black",
-#         ).pack(fill="x")
-#     else:
-#         messagebox.showerror("KeepMyKeybinds!", "Tray exe already disabled.")
-#         ToggleTrayBtn = tk.Button(
-#             text=f"{"Disable" if TRAY_ENABLED else "Enable"} backup checher",
-#             fg="#f07b05",
-#             bg="black",
-#         ).pack(fill="x")
-
-
-# def toggle_tray():
-#     if is_tray_enabled():
-#         disable_tray()
-#     else:
-#         enable_tray()
-
-
-# def is_tray_enabled():
-#     if os.path.exists(os.path.join(STARTUP_FOLDER, "KeepMyKeybindsTray.exe")):
-#         TRAY_ENABLED = True
-#         print("Tray enabled")
-#         return True
-#     else:
-#         TRAY_ENABLED = False
-#         print("Tray disabled")
-#         return False
-
-
-# get_config()
-
-"""
-Cosmetic
-"""
 
 
 # Function to list font families within a font file
@@ -150,25 +113,6 @@ def register_custom_font(root, font_path):
     else:
         raise ValueError("No font families found in the font file.")
 
-
-
-#Startup
-
-
-# Init startup logic
-try:
-    if not os.path.exists(DATA_FOLDER):
-        print("Creating Data Folder")
-        os.mkdir(DATA_FOLDER)
-    if not os.path.exists(BACKUP_FOLDER):
-        print("Creating TEMP_FOLDER_LOCATION")
-        os.mkdir(BACKUP_FOLDER)
-    custom_font_family = register_custom_font(window, "EUROCAPS.TTF")
-    print("Directories created successfully")
-except Exception as e:
-    print("Error on startup:", e)
-
-
 #Backup/Restore
 
 
@@ -178,28 +122,29 @@ def Backup():
         time = datetime.datetime.now().time()
         folder_name = f"{date}_{time.hour}_{time.minute}"
         shutil.copytree(
-            KEYBIND_FOLDER, os.path.join(BACKUP_FOLDER, "Bindings", folder_name)
+            ED_KEYBINDS_FOLDER, os.path.join(BACKUP_FOLDER, "Bindings", folder_name)
         )
         messagebox.showinfo(
             "KeepMyKeybinds", f"Backup saved to folder under '{folder_name}'"
         )
     except Exception as e:
-        print("Error copying folders:", e)
+        log(f"Error copying folders: {e}", "Backup")
         messagebox.showinfo("KeepMyKeybinds", e)
 
 
 def Restore():
-    print("Restoring")
+    log("Restoring", "Restore")
     listdir = os.listdir(os.path.join(BACKUP_FOLDER, "Bindings"))
     listdir.sort()
     latest_backup = listdir[len(listdir) - 1]
+    log(f"Asked user if they want backup from {latest_backup}", "Restore")
     choice = messagebox.askokcancel(
         "KeepMyKeybinds!", f"Restore backup from {latest_backup}?"
     )
     if choice:
-        shutil.rmtree(KEYBIND_FOLDER)
+        shutil.rmtree(ED_KEYBINDS_FOLDER)
         shutil.copytree(
-            os.path.join(BACKUP_FOLDER, "Bindings", latest_backup), KEYBIND_FOLDER
+            os.path.join(BACKUP_FOLDER, "Bindings", latest_backup), ED_KEYBINDS_FOLDER
         )
         messagebox.showinfo(
             "KeepMyKeybinds!",
@@ -210,17 +155,35 @@ def Restore():
 
 
 def OpenBackupLocation():
-    print(f"Opening backup location: " + DATA_FOLDER)
+    log(f"Opening backup location: {DATA_FOLDER}", "OpenBackupLocation")
     subprocess.Popen(rf'explorer /select,"{BACKUP_FOLDER}"')
 
 def OpenHelpPage():
+    log("Opening help page", "OpenHelpPage")
     webbrowser.open_new_tab("https://niceygy.net/keepmykeybinds")
 
 
+# Init startup logic
+try:
+    if not os.path.exists(DATA_FOLDER):
+        log(f"Creating Data Folder at {DATA_FOLDER}", "Startup")
+        os.mkdir(DATA_FOLDER)
+    if not os.path.exists(BACKUP_FOLDER):
+        log(f"Creating BACKUP_FOLDER at {BACKUP_FOLDER}", "Startup")
+        os.mkdir(BACKUP_FOLDER)
+    if not os.path.exists(DEBUG_FOLDER) and DEBUG_ENABLED:
+        log(f"Creating DEBUG_FOLDER at {DEBUG_FOLDER}", "Startup")
+        os.mkdir(DEBUG_FOLDER)
+    custom_font_family = register_custom_font(window, "EUROCAPS.TTF")
+    get_config()
+    if os.path.exists(os.path.join(os.getcwd(), ".gitignore")):
+        DEBUG_ENABLED = True
+        DEVENV = True
+except Exception as e:
+    log(e, "Startup")
+
+
 #GUI Conf
-
-
-
 title = tk.Label(
     text="Keep My Keybinds!",
     anchor="center",
@@ -252,23 +215,6 @@ RestoreBtn = tk.Button(
     command=Restore,
     font=("Euro Caps", 13),
 ).pack(fill="x")
-
-# # Tray Buttons
-
-# ToggleTrayBtn = tk.Button(
-#     text=f"{"Disable" if TRAY_ENABLED else "Enable"} backup checher",
-#     fg="#f07b05",
-#     bg="black",
-#     font=("Euro Caps", 13),
-#     command=toggle_tray
-# ).pack(fill="x")
-# tk.Label(
-#     text="This will check for any changes when \nyour PC starts. May require admin \npermissions to enable.",
-#     fg="#f07b05",
-#     bg="black",
-#     anchor="center",
-#     font=("Euro Caps", 13),
-# ).pack(fill="x")
 
 # Open Backup Folder
 OpenBackupBtn = tk.Button(
@@ -305,5 +251,5 @@ tk.Label(
 
 #Go!
 
-
+log("Startup Sucsess", "Main")
 window.mainloop()
