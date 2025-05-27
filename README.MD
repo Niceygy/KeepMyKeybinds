@@ -20,4 +20,4 @@ Before you download, please be aware that this:
 
 Enjoy!
 
-[Download]: https://go.niceygy.net/KeepMyKeybinds_download
+[Download](https://go.niceygy.net/KeepMyKeybinds_download)
